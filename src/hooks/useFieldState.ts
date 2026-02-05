@@ -105,7 +105,7 @@ export function useFieldState() {
     setState((prev) => ({
       fields: prev.fields.map((field) =>
         field.id === fieldId
-          ? { ...field, imageIds: [...field.imageIds, ...items.map((item) => item.id)] }
+          ? { ...field, imageIds: [...items.map((item) => item.id), ...field.imageIds] }
           : field
       ),
       images: [...prev.images, ...items],

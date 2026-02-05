@@ -25,12 +25,41 @@ const isAllowedFile = (file: File) => {
   return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))
 }
 
+const extractFiles = (dataTransfer: DataTransfer | null): File[] => {
+  if (!dataTransfer) {
+    return []
+  }
+  if (dataTransfer.files && dataTransfer.files.length > 0) {
+    return Array.from(dataTransfer.files)
+  }
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    return Array.from(dataTransfer.items)
+      .map((item) => (item.kind === 'file' ? item.getAsFile() : null))
+      .filter((file): file is File => Boolean(file))
+  }
+  return []
+}
+
 const isFileDrag = (event: DragEvent<HTMLElement>) => {
-  const types = event.dataTransfer?.types
-  if (!types) {
+  const dataTransfer = event.dataTransfer
+  if (!dataTransfer) {
     return false
   }
-  return Array.from(types).some((type) => type === 'Files' || type === 'application/x-moz-file')
+  if (dataTransfer.files && dataTransfer.files.length > 0) {
+    return true
+  }
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    return Array.from(dataTransfer.items).some((item) => item.kind === 'file')
+  }
+  if (dataTransfer.types && dataTransfer.types.length > 0) {
+    return Array.from(dataTransfer.types).some(
+      (type) =>
+        type === 'Files' ||
+        type === 'application/x-moz-file' ||
+        type === 'public.file-url'
+    )
+  }
+  return false
 }
 
 export default function FieldColumn({
@@ -107,13 +136,13 @@ export default function FieldColumn({
   }
 
   const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(event)) {
-      return
-    }
     event.preventDefault()
     event.stopPropagation()
     setDropActive(false)
-    const droppedFiles = Array.from(event.dataTransfer?.files ?? [])
+    const droppedFiles = extractFiles(event.dataTransfer ?? null)
+    if (droppedFiles.length === 0) {
+      return
+    }
     await handleFiles(droppedFiles)
   }
 
@@ -148,17 +177,18 @@ export default function FieldColumn({
       <div
         className={`field-dropzone${dropActive ? ' is-active' : ''}`}
         onDragEnter={(event) => {
-          if (!isFileDrag(event)) {
-            return
-          }
           event.preventDefault()
-          setDropActive(true)
+          if (isFileDrag(event)) {
+            setDropActive(true)
+          }
         }}
         onDragOver={(event) => {
-          if (!isFileDrag(event)) {
-            return
-          }
           event.preventDefault()
+          if (isFileDrag(event)) {
+            if (event.dataTransfer) {
+              event.dataTransfer.dropEffect = 'copy'
+            }
+          }
         }}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
