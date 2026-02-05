@@ -16,8 +16,6 @@ type FieldColumnProps = {
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
-const PROXY_ERROR_MESSAGE =
-  'This site blocks importing. Open image in a new tab and drag the direct image, or download and drag from desktop.'
 
 const isAllowedFile = (file: File) => {
   if (ALLOWED_TYPES.has(file.type)) {
@@ -25,21 +23,6 @@ const isAllowedFile = (file: File) => {
   }
   const name = file.name.toLowerCase()
   return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))
-}
-
-const extractFiles = (dataTransfer: DataTransfer | null): File[] => {
-  if (!dataTransfer) {
-    return []
-  }
-  if (dataTransfer.files && dataTransfer.files.length > 0) {
-    return Array.from(dataTransfer.files)
-  }
-  if (dataTransfer.items && dataTransfer.items.length > 0) {
-    return Array.from(dataTransfer.items)
-      .map((item) => (item.kind === 'file' ? item.getAsFile() : null))
-      .filter((file): file is File => Boolean(file))
-  }
-  return []
 }
 
 const isHttpUrl = (value: string) => {
@@ -69,70 +52,88 @@ const extractImageSrcFromHtml = (html: string) => {
   return match?.[1] ?? null
 }
 
-const extractUrls = (dataTransfer: DataTransfer | null): string[] => {
+const extractUrlFromDataTransfer = (dataTransfer: DataTransfer | null): string | null => {
   if (!dataTransfer) {
-    return []
+    return null
   }
 
-  const candidates: string[] = []
   const uriList = dataTransfer.getData('text/uri-list')
   if (uriList) {
-    uriList
+    const lines = uriList
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'))
-      .forEach((line) => candidates.push(line))
-  }
-
-  if (candidates.length === 0) {
-    const plain = dataTransfer.getData('text/plain')
-    if (plain) {
-      const match = plain.match(/https?:\/\/\S+/)
-      if (match?.[0]) {
-        candidates.push(match[0])
-      }
+    const first = lines[0]
+    if (first && isHttpUrl(first)) {
+      return first
     }
   }
 
-  if (candidates.length === 0) {
-    const html = dataTransfer.getData('text/html')
-    if (html) {
-      const src = extractImageSrcFromHtml(html)
-      if (src) {
-        candidates.push(src)
-      }
+  const plain = dataTransfer.getData('text/plain')
+  if (plain) {
+    const match = plain.match(/https?:\/\/\S+/)
+    if (match?.[0] && isHttpUrl(match[0])) {
+      return match[0]
     }
   }
 
-  return candidates.map((value) => value.trim()).filter(isHttpUrl)
+  const html = dataTransfer.getData('text/html')
+  if (html) {
+    const src = extractImageSrcFromHtml(html)
+    if (src && isHttpUrl(src)) {
+      return src
+    }
+  }
+
+  return null
 }
 
-const fetchImageFromUrl = async (
-  url: string
-): Promise<{ file: File | null; error?: 'proxy' }> => {
+const extractImageFromDrop = async (
+  event: DragEvent<HTMLElement>
+): Promise<{ files: File[]; error?: string }> => {
+  const dataTransfer = event.dataTransfer
+  if (!dataTransfer) {
+    return { files: [], error: 'No image data found.' }
+  }
+
+  if (dataTransfer.files && dataTransfer.files.length > 0) {
+    return { files: Array.from(dataTransfer.files) }
+  }
+
+  const url = extractUrlFromDataTransfer(dataTransfer)
+  if (!url) {
+    return { files: [], error: 'No image URL found.' }
+  }
+
+  if (!isHttpUrl(url)) {
+    return { files: [], error: 'Invalid URL.' }
+  }
+
   try {
-    if (!isHttpUrl(url)) {
-      return { file: null, error: 'proxy' }
-    }
-
-    const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`)
+    const response = await fetch(url, { mode: 'cors' })
     if (!response.ok) {
-      return { file: null, error: 'proxy' }
+      return {
+        files: [],
+        error:
+          'This site blocks direct image downloads—try saving the image and uploading, or drag from Google Images.',
+      }
     }
-
     const blob = await response.blob()
-    const contentType =
-      (response.headers.get('content-type') ?? blob.type).toLowerCase()
-    const mimeType = contentType.split(';')[0].trim()
-    if (!mimeType.startsWith('image/')) {
-      return { file: null, error: 'proxy' }
+    if (!blob.type.startsWith('image/')) {
+      return { files: [], error: 'URL did not return an image.' }
     }
+    const objectUrl = URL.createObjectURL(blob)
+    URL.revokeObjectURL(objectUrl)
 
-    const extension = mimeType.split('/')[1] ?? 'png'
+    const extension = blob.type.split('/')[1] ?? 'png'
     const filename = `image.${extension}`
-    return { file: new File([blob], filename, { type: mimeType || blob.type }) }
+    return { files: [new File([blob], filename, { type: blob.type })] }
   } catch {
-    return { file: null, error: 'proxy' }
+    return {
+      files: [],
+      error:
+        'This site blocks direct image downloads—try saving the image and uploading, or drag from Google Images.',
+    }
   }
 }
 
@@ -238,26 +239,14 @@ export default function FieldColumn({
     event.preventDefault()
     event.stopPropagation()
     setDropActive(false)
-    const droppedFiles = extractFiles(event.dataTransfer ?? null)
-    if (droppedFiles.length === 0) {
-      const urls = extractUrls(event.dataTransfer ?? null)
-      if (urls.length === 0) {
-        setErrorMessage('No image URL found.')
-        return
+    const result = await extractImageFromDrop(event)
+    if (result.files.length === 0) {
+      if (result.error) {
+        setErrorMessage(result.error)
       }
-
-      for (const url of urls) {
-        const result = await fetchImageFromUrl(url)
-        if (result.file) {
-          await handleFiles([result.file])
-          return
-        }
-      }
-
-      setErrorMessage(PROXY_ERROR_MESSAGE)
       return
     }
-    await handleFiles(droppedFiles)
+    await handleFiles(result.files)
   }
 
   const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
