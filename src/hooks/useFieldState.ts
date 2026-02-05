@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { nanoid } from 'nanoid'
 import { arrayMove } from '@dnd-kit/sortable'
 import type { Field, FieldState } from '../types'
-import { loadState, saveState } from '../storage'
+import { clearState, loadState, saveState } from '../storage'
 
 const DEFAULT_FIELD_NAME = 'Untitled field'
 
@@ -48,6 +48,7 @@ export type FieldActions = {
   updateImageNote: (imageId: string, note: string) => void
   removeImage: (imageId: string) => void
   moveImage: (imageId: string, targetFieldId: string, targetIndex: number) => void
+  resetLibrary: () => void
 }
 
 export function useFieldState() {
@@ -104,7 +105,7 @@ export function useFieldState() {
     setState((prev) => ({
       fields: prev.fields.map((field) =>
         field.id === fieldId
-          ? { ...field, imageIds: [...field.imageIds, ...items.map((item) => item.id)] }
+          ? { ...field, imageIds: [...items.map((item) => item.id), ...field.imageIds] }
           : field
       ),
       images: [...prev.images, ...items],
@@ -185,6 +186,11 @@ export function useFieldState() {
     []
   )
 
+  const resetLibrary = useCallback(() => {
+    clearState()
+    setState(createDefaultState())
+  }, [])
+
   const actions: FieldActions = useMemo(
     () => ({
       addField,
@@ -193,8 +199,17 @@ export function useFieldState() {
       updateImageNote,
       removeImage,
       moveImage,
+      resetLibrary,
     }),
-    [addField, renameField, addImages, updateImageNote, removeImage, moveImage]
+    [
+      addField,
+      renameField,
+      addImages,
+      updateImageNote,
+      removeImage,
+      moveImage,
+      resetLibrary,
+    ]
   )
 
   return {

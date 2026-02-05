@@ -12,6 +12,7 @@ function App() {
         fields={state.fields}
         images={state.images}
         onAddField={actions.addField}
+        onResetLibrary={actions.resetLibrary}
       />
       <main className="main">
         <div className="main-header">
