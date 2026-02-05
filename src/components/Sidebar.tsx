@@ -35,7 +35,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>FieldV1</h1>
+        <h1>Field</h1>
         <p>Local visual research</p>
       </div>
 
