@@ -1,18 +1,18 @@
 .app {
   display: flex;
   min-height: 100vh;
-  background: #f7f6f3;
-  color: #1f1f1f;
+  background: #fff;
+  color: #000;
 }
 
 .sidebar {
-  width: 240px;
-  border-right: 1px solid #dedbd5;
-  padding: 18px;
-  background: #faf9f6;
+  width: 220px;
+  border-right: 1px solid #ddd;
+  padding: 16px;
+  background: #fff;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .sidebar-header h1 {
@@ -23,7 +23,7 @@
 
 .sidebar-header p {
   margin: 4px 0 0;
-  color: #6e6b67;
+  color: #333;
   font-size: 0.85rem;
 }
 
@@ -36,16 +36,16 @@
 .add-field input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #cfcac2;
-  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  border-radius: 0;
   background: #fff;
 }
 
 .add-field button {
   padding: 8px 10px;
-  border: 1px solid #c1bbb2;
-  background: #fefefe;
-  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 0;
   cursor: pointer;
 }
 
@@ -60,7 +60,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7a756f;
+  color: #333;
 }
 
 .field-list {
@@ -78,17 +78,18 @@
   align-items: center;
   font-size: 0.9rem;
   padding: 6px 8px;
-  border-radius: 8px;
-  background: #f1efe9;
-  color: #3d3a36;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  background: #fff;
+  color: #000;
 }
 
 .field-count {
   font-size: 0.75rem;
-  color: #5c5954;
-  background: #e3dfd8;
+  color: #333;
+  background: #f7f7f7;
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: 0;
 }
 
 .main {
@@ -96,6 +97,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: #fff;
 }
 
 .main-header {
@@ -103,8 +105,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #dedbd5;
-  background: #f7f6f3;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
 }
 
 .main-header h2 {
@@ -114,23 +116,24 @@
 
 .main-header p {
   margin: 4px 0 0;
-  color: #6e6b67;
+  color: #333;
   font-size: 0.85rem;
 }
 
 .storage-indicator {
   font-size: 0.75rem;
-  color: #5c5954;
-  border: 1px solid #cfcac2;
+  color: #333;
+  border: 1px solid #d9d9d9;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: 0;
   background: #fff;
 }
 
 .field-board {
   flex: 1;
   overflow-x: auto;
-  padding: 18px;
+  overflow-y: hidden;
+  padding: 16px;
 }
 
 .field-board-inner {
@@ -138,19 +141,18 @@
   gap: 16px;
   align-items: flex-start;
   min-height: 100%;
+  width: max-content;
 }
 
 .field-column {
   min-width: 280px;
-  max-width: 320px;
   background: #fff;
-  border: 1px solid #dedbd5;
-  border-radius: 12px;
+  border: 1px solid #ddd;
+  border-radius: 0;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .field-header {
@@ -163,7 +165,7 @@
 .field-name-input {
   flex: 1;
   border: none;
-  border-bottom: 1px solid #dedbd5;
+  border-bottom: 1px solid #d9d9d9;
   font-size: 0.95rem;
   font-weight: 600;
   padding: 2px 0;
@@ -171,26 +173,26 @@
 
 .field-name-input:focus {
   outline: none;
-  border-bottom-color: #948f87;
+  border-bottom-color: #666;
 }
 
 .field-meta {
   font-size: 0.75rem;
-  color: #6e6b67;
+  color: #333;
 }
 
 .field-dropzone {
-  border: 1px dashed #cfcac2;
-  border-radius: 10px;
-  background: #faf9f6;
+  border: 1px dashed #ccc;
+  border-radius: 0;
+  background: #fff;
   padding: 12px;
   text-align: center;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .field-dropzone.is-active {
-  border-color: #9a958e;
-  background: #f0ede6;
+  border-color: #000;
+  background: #f7f7f7;
 }
 
 .dropzone-label {
@@ -213,17 +215,17 @@
 .dropzone-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #3d3a36;
+  color: #000;
 }
 
 .dropzone-subtitle {
   font-size: 0.75rem;
-  color: #6e6b67;
+  color: #333;
 }
 
 .field-error {
   margin: -4px 0 0;
-  color: #8a4b3a;
+  color: #7a3d2c;
   font-size: 0.75rem;
 }
 
@@ -233,33 +235,39 @@
   gap: 10px;
   padding: 6px;
   min-height: 160px;
-  border-radius: 10px;
-  background: #faf9f6;
+  border-radius: 0;
+  background: #fff;
   border: 1px dashed transparent;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .field-images.is-over {
-  border-color: #9a958e;
-  background: #f0ede6;
+  border-color: #000;
+  background: #f7f7f7;
 }
 
 .empty-state {
   text-align: center;
-  color: #7a756f;
+  color: #333;
   font-size: 0.8rem;
   padding: 20px 8px;
 }
 
 .image-card {
   background: #fff;
-  border: 1px solid #dedbd5;
-  border-radius: 10px;
+  border: 1px solid #ddd;
+  border-radius: 0;
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   width: 100%;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.image-card:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  opacity: 0.98;
 }
 
 .image-toolbar {
@@ -270,9 +278,9 @@
 
 .drag-handle,
 .image-remove {
-  border: 1px solid #cfcac2;
-  background: #f9f8f6;
-  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  border-radius: 0;
   padding: 4px 6px;
   font-size: 0.7rem;
   cursor: pointer;
@@ -286,11 +294,24 @@
   cursor: grabbing;
 }
 
+.image-remove {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-card:hover .image-remove {
+  opacity: 1;
+}
+
+.image-card:focus-within .image-remove {
+  opacity: 1;
+}
+
 .image-wrapper {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f1efe9;
-  border-radius: 8px;
+  background: #f5f5f5;
+  border-radius: 0;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -305,8 +326,8 @@
 }
 
 .image-note {
-  border: 1px solid #dedbd5;
-  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  border-radius: 0;
   padding: 4px 6px;
   font-size: 0.75rem;
 }
