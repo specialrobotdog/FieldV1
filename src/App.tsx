@@ -35,7 +35,7 @@ function App() {
       <main className="main">
         <div className="main-header">
           <div>
-            <h2>Fields</h2>
+            <h2>Your Fields</h2>
             <p>Save images locally, reorder them, and compare side by side.</p>
           </div>
           <span className="storage-indicator">Local only</span>
