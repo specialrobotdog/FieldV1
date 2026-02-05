@@ -55,6 +55,34 @@
   gap: 10px;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reset-button {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.reset-button:hover {
+  opacity: 0.8;
+}
+
+.sidebar-hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #333;
+}
+
 .sidebar-title {
   margin: 0;
   font-size: 0.75rem;

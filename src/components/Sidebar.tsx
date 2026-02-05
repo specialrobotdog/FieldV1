@@ -5,6 +5,7 @@ type SidebarProps = {
   fields: Field[]
   images: ImageItem[]
   onAddField: (name?: string) => void
+  onResetLibrary: () => void
 }
 
 const countImages = (fields: Field[], images: ImageItem[]) => {
@@ -16,7 +17,12 @@ const countImages = (fields: Field[], images: ImageItem[]) => {
   return counts
 }
 
-export default function Sidebar({ fields, images, onAddField }: SidebarProps) {
+export default function Sidebar({
+  fields,
+  images,
+  onAddField,
+  onResetLibrary,
+}: SidebarProps) {
   const [draft, setDraft] = useState('')
   const counts = useMemo(() => countImages(fields, images), [fields, images])
 
@@ -57,6 +63,13 @@ export default function Sidebar({ fields, images, onAddField }: SidebarProps) {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="sidebar-footer">
+        <button type="button" className="reset-button" onClick={onResetLibrary}>
+          Reset library
+        </button>
+        <p className="sidebar-hint">Clears local data for this browser.</p>
       </div>
     </aside>
   )
