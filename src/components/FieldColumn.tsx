@@ -3,9 +3,9 @@ import {
   useState,
   type ChangeEvent,
   type DragEvent,
-  type ClipboardEvent,
   type FormEvent,
 } from 'react'
+import type React from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Field, ImageItem } from '../types'
@@ -41,26 +41,24 @@ const isHttpUrl = (value: string) => {
   }
 }
 
-const extractUrlFromTransfer = (
-  dataTransfer: DataTransfer | ClipboardData | null
-): string | null => {
-  if (!dataTransfer) {
+const extractUrlFromTransfer = (dt: DataTransfer | null): string | null => {
+  if (!dt) {
     return null
   }
 
-  const uriList = dataTransfer.getData('text/uri-list')
+  const uriList = dt.getData('text/uri-list')
   if (uriList) {
     const lines = uriList
       .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('#'))
+      .map((line: string) => line.trim())
+      .filter((line: string) => line && !line.startsWith('#'))
     const first = lines[0]
     if (first && isHttpUrl(first)) {
       return first
     }
   }
 
-  const plain = dataTransfer.getData('text/plain')
+  const plain = dt.getData('text/plain')
   if (plain) {
     const match = plain.match(/https?:\/\/\S+/)
     if (match?.[0] && isHttpUrl(match[0])) {
@@ -101,29 +99,29 @@ const fetchImageFileFromUrl = async (
 }
 
 const extractImageFromTransfer = async (
-  dataTransfer: DataTransfer | ClipboardData | null
+  dt: DataTransfer | null
 ): Promise<{ files: File[]; error?: string }> => {
-  if (!dataTransfer) {
+  if (!dt) {
     return { files: [], error: 'No image data found.' }
   }
 
-  if ('files' in dataTransfer && dataTransfer.files.length > 0) {
-    return { files: Array.from(dataTransfer.files) }
+  if (dt.files && dt.files.length > 0) {
+    return { files: Array.from(dt.files) }
   }
 
-  if (dataTransfer.items && dataTransfer.items.length > 0) {
-    const imageItem = Array.from(dataTransfer.items).find(
-      (item) => item.kind === 'file' && item.type.startsWith('image/')
-    )
-    if (imageItem) {
-      const file = imageItem.getAsFile()
-      if (file) {
-        return { files: [file] }
+  if (dt.items && dt.items.length > 0) {
+    const items = Array.from(dt.items) as DataTransferItem[]
+    for (const item of items) {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (file) {
+          return { files: [file] }
+        }
       }
     }
   }
 
-  const url = extractUrlFromTransfer(dataTransfer)
+  const url = extractUrlFromTransfer(dt)
   if (!url) {
     return { files: [], error: 'No image URL found.' }
   }
@@ -139,18 +137,19 @@ const extractImageFromTransfer = async (
 }
 
 const isFileDrag = (event: DragEvent<HTMLElement>) => {
-  const dataTransfer = event.dataTransfer
-  if (!dataTransfer) {
+  const dt = event.dataTransfer
+  if (!dt) {
     return false
   }
-  if (dataTransfer.files && dataTransfer.files.length > 0) {
+  if (dt.files && dt.files.length > 0) {
     return true
   }
-  if (dataTransfer.items && dataTransfer.items.length > 0) {
-    return Array.from(dataTransfer.items).some((item) => item.kind === 'file')
+  if (dt.items && dt.items.length > 0) {
+    const items = Array.from(dt.items) as DataTransferItem[]
+    return items.some((item) => item.kind === 'file')
   }
-  if (dataTransfer.types && dataTransfer.types.length > 0) {
-    return Array.from(dataTransfer.types).some(
+  if (dt.types && dt.types.length > 0) {
+    return Array.from(dt.types).some(
       (type) =>
         type === 'Files' ||
         type === 'application/x-moz-file' ||
@@ -241,7 +240,8 @@ export default function FieldColumn({
     event.preventDefault()
     event.stopPropagation()
     setDropActive(false)
-    const result = await extractImageFromTransfer(event.dataTransfer)
+    const dt = event.dataTransfer
+    const result = await extractImageFromTransfer(dt)
     if (result.files.length === 0) {
       if (result.error) {
         setErrorMessage(result.error)
@@ -251,10 +251,11 @@ export default function FieldColumn({
     await handleFiles(result.files)
   }
 
-  const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
+  const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
     event.preventDefault()
     event.stopPropagation()
-    const result = await extractImageFromTransfer(event.clipboardData)
+    const dt = event.clipboardData
+    const result = await extractImageFromTransfer(dt)
     if (result.files.length === 0) {
       if (result.error) {
         setErrorMessage(result.error)
