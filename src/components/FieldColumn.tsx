@@ -1,4 +1,10 @@
-import { useEffect, useState, type ChangeEvent, type DragEvent } from 'react'
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type ClipboardEvent,
+} from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Field, ImageItem } from '../types'
@@ -34,25 +40,9 @@ const isHttpUrl = (value: string) => {
   }
 }
 
-const extractImageSrcFromHtml = (html: string) => {
-  if (typeof DOMParser !== 'undefined') {
-    try {
-      const doc = new DOMParser().parseFromString(html, 'text/html')
-      const img = doc.querySelector('img')
-      const src = img?.getAttribute('src')
-      if (src) {
-        return src
-      }
-    } catch {
-      // Ignore parse errors and fall back to regex.
-    }
-  }
-
-  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i)
-  return match?.[1] ?? null
-}
-
-const extractUrlFromDataTransfer = (dataTransfer: DataTransfer | null): string | null => {
+const extractUrlFromTransfer = (
+  dataTransfer: DataTransfer | ClipboardData | null
+): string | null => {
   if (!dataTransfer) {
     return null
   }
@@ -77,30 +67,33 @@ const extractUrlFromDataTransfer = (dataTransfer: DataTransfer | null): string |
     }
   }
 
-  const html = dataTransfer.getData('text/html')
-  if (html) {
-    const src = extractImageSrcFromHtml(html)
-    if (src && isHttpUrl(src)) {
-      return src
-    }
-  }
-
   return null
 }
 
-const extractImageFromDrop = async (
-  event: DragEvent<HTMLElement>
+const extractImageFromTransfer = async (
+  dataTransfer: DataTransfer | ClipboardData | null
 ): Promise<{ files: File[]; error?: string }> => {
-  const dataTransfer = event.dataTransfer
   if (!dataTransfer) {
     return { files: [], error: 'No image data found.' }
   }
 
-  if (dataTransfer.files && dataTransfer.files.length > 0) {
+  if ('files' in dataTransfer && dataTransfer.files.length > 0) {
     return { files: Array.from(dataTransfer.files) }
   }
 
-  const url = extractUrlFromDataTransfer(dataTransfer)
+  if (dataTransfer.items && dataTransfer.items.length > 0) {
+    const imageItem = Array.from(dataTransfer.items).find(
+      (item) => item.kind === 'file' && item.type.startsWith('image/')
+    )
+    if (imageItem) {
+      const file = imageItem.getAsFile()
+      if (file) {
+        return { files: [file] }
+      }
+    }
+  }
+
+  const url = extractUrlFromTransfer(dataTransfer)
   if (!url) {
     return { files: [], error: 'No image URL found.' }
   }
@@ -114,13 +107,15 @@ const extractImageFromDrop = async (
     if (!response.ok) {
       return {
         files: [],
-        error:
-          'This site blocks direct image downloads—try saving the image and uploading, or drag from Google Images.',
+        error: 'This site blocks direct import — try copy image, then paste here.',
       }
     }
     const blob = await response.blob()
     if (!blob.type.startsWith('image/')) {
       return { files: [], error: 'URL did not return an image.' }
+    }
+    if (!ALLOWED_TYPES.has(blob.type)) {
+      return { files: [], error: 'Only JPG, PNG, or WEBP images are supported.' }
     }
     const objectUrl = URL.createObjectURL(blob)
     URL.revokeObjectURL(objectUrl)
@@ -131,8 +126,7 @@ const extractImageFromDrop = async (
   } catch {
     return {
       files: [],
-      error:
-        'This site blocks direct image downloads—try saving the image and uploading, or drag from Google Images.',
+      error: 'This site blocks direct import — try copy image, then paste here.',
     }
   }
 }
@@ -155,8 +149,7 @@ const isFileDrag = (event: DragEvent<HTMLElement>) => {
         type === 'application/x-moz-file' ||
         type === 'public.file-url' ||
         type === 'text/uri-list' ||
-        type === 'text/plain' ||
-        type === 'text/html'
+        type === 'text/plain'
     )
   }
   return false
@@ -239,7 +232,20 @@ export default function FieldColumn({
     event.preventDefault()
     event.stopPropagation()
     setDropActive(false)
-    const result = await extractImageFromDrop(event)
+    const result = await extractImageFromTransfer(event.dataTransfer)
+    if (result.files.length === 0) {
+      if (result.error) {
+        setErrorMessage(result.error)
+      }
+      return
+    }
+    await handleFiles(result.files)
+  }
+
+  const handlePaste = async (event: ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const result = await extractImageFromTransfer(event.clipboardData)
     if (result.files.length === 0) {
       if (result.error) {
         setErrorMessage(result.error)
@@ -282,6 +288,7 @@ export default function FieldColumn({
       <div className="field-body">
         <div
           className={`field-dropzone${dropActive ? ' is-active' : ''}`}
+          tabIndex={0}
           onDragEnter={(event) => {
             event.preventDefault()
             event.stopPropagation()
@@ -300,6 +307,7 @@ export default function FieldColumn({
           }}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onPaste={handlePaste}
         >
           <label className="dropzone-label">
             <input
@@ -311,6 +319,9 @@ export default function FieldColumn({
             <span className="dropzone-title">Drop images here</span>
             <span className="dropzone-subtitle">
               or click to browse (JPG, PNG, WEBP)
+            </span>
+            <span className="dropzone-tip">
+              Tip: Copy an image and press ⌘V / Ctrl+V
             </span>
           </label>
         </div>

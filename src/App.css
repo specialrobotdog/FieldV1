@@ -326,9 +326,11 @@
   color: #000;
 }
 
-.dropzone-subtitle {
+.dropzone-subtitle,
+.dropzone-tip {
   font-size: 0.75rem;
   color: #333;
+  display: block;
 }
 
 .field-error {
